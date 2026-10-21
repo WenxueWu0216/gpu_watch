@@ -1,0 +1,126 @@
+# GPUWatch Prometheus recording + alerting rules.
+#
+# These are a coarse, stateless backstop that works without the Python
+# detector (e.g. if it is down). The detector (detector/) is the primary
+# signal: it uses windowed robust z-scores, persistence and correlation,
+# which plain PromQL cannot express well. Thresholds mirror
+# detector/config.yaml where possible.
+groups:
+  - name: gpuwatch.recording
+    interval: 10s
+    rules:
+      - record: gpuwatch:node_step_time_seconds:max
+        expr: max by (Hostname) (gpuwatch_train_step_time_seconds)
+      - record: gpuwatch:node_step_time:ratio_to_cluster_median
+        expr: |
+          avg_over_time(gpuwatch:node_step_time_seconds:max[2m])
+            / scalar(quantile(0.5, avg_over_time(gpuwatch:node_step_time_seconds:max[2m])))
+      - record: gpuwatch:node_xmit_wait:ratio_to_cluster_median
+        expr: |
+          sum by (Hostname) (avg_over_time(gpuwatch_net_xmit_wait_rate[1m]))
+            / scalar(quantile(0.5, sum by (Hostname) (avg_over_time(gpuwatch_net_xmit_wait_rate[1m]))))
+      - record: gpuwatch:gpu_thermal_throttled
+        # 1 if SW_THERMAL (0x20) or HW_THERMAL (0x40) is set in the throttle bitmask.
+        expr: (floor(DCGM_FI_DEV_CLOCK_THROTTLE_REASONS / 32) % 4) > bool 0
+
+  - name: gpuwatch.alerts
+    rules:
+      - alert: GPUXidCritical
+        expr: |
+          DCGM_FI_DEV_XID_ERRORS == 48 or DCGM_FI_DEV_XID_ERRORS == 61 or DCGM_FI_DEV_XID_ERRORS == 62
+          or DCGM_FI_DEV_XID_ERRORS == 63 or DCGM_FI_DEV_XID_ERRORS == 64 or DCGM_FI_DEV_XID_ERRORS == 74
+          or DCGM_FI_DEV_XID_ERRORS == 79 or DCGM_FI_DEV_XID_ERRORS == 92 or DCGM_FI_DEV_XID_ERRORS == 94
+          or DCGM_FI_DEV_XID_ERRORS == 95 or DCGM_FI_DEV_XID_ERRORS == 119 or DCGM_FI_DEV_XID_ERRORS == 120
+        labels:
+          severity: critical
+          runbook: runbook.md#1-xid-errors
+        annotations:
+          summary: "XID {{ $value }} on {{ $labels.Hostname }} GPU {{ $labels.gpu }}"
+          description: "Hardware/driver XID. Drain the node and follow the XID runbook."
+
+      - alert: GPUXidOther
+        expr: DCGM_FI_DEV_XID_ERRORS > 0 unless (DCGM_FI_DEV_XID_ERRORS == 48 or DCGM_FI_DEV_XID_ERRORS == 79 or DCGM_FI_DEV_XID_ERRORS == 94 or DCGM_FI_DEV_XID_ERRORS == 95)
+        for: 1m
+        labels:
+          severity: warning
+          runbook: runbook.md#1-xid-errors
+        annotations:
+          summary: "XID {{ $value }} on {{ $labels.Hostname }} GPU {{ $labels.gpu }} (often application-triggered)"
+
+      - alert: GPUEccUncorrectable
+        expr: increase(DCGM_FI_DEV_ECC_DBE_VOL_TOTAL[10m]) > 0
+        labels:
+          severity: critical
+          runbook: runbook.md#2-ecc-errors
+        annotations:
+          summary: "Uncorrectable ECC errors on {{ $labels.Hostname }} GPU {{ $labels.gpu }}"
+
+      - alert: GPUEccCorrectableBurst
+        expr: increase(DCGM_FI_DEV_ECC_SBE_VOL_TOTAL[1m]) >= 10
+        labels:
+          severity: warning
+          runbook: runbook.md#2-ecc-errors
+        annotations:
+          summary: "{{ $value }} correctable ECC errors/min on {{ $labels.Hostname }} GPU {{ $labels.gpu }}"
+
+      - alert: GPUThermalThrottle
+        expr: gpuwatch:gpu_thermal_throttled == 1
+        for: 30s
+        labels:
+          severity: warning
+          runbook: runbook.md#3-thermal-throttle
+        annotations:
+          summary: "Thermal throttling on {{ $labels.Hostname }} GPU {{ $labels.gpu }}"
+
+      - alert: GPUTemperatureCritical
+        expr: DCGM_FI_DEV_GPU_TEMP >= 92
+        for: 1m
+        labels:
+          severity: critical
+          runbook: runbook.md#3-thermal-throttle
+        annotations:
+          summary: "{{ $labels.Hostname }} GPU {{ $labels.gpu }} at {{ $value }} C"
+
+      - alert: NodeStraggler
+        expr: gpuwatch:node_step_time:ratio_to_cluster_median > 1.10
+        for: 2m
+        labels:
+          severity: warning
+          runbook: runbook.md#4-straggler-node
+        annotations:
+          summary: "{{ $labels.Hostname }} step time {{ $value | humanizePercentage }} of cluster median"
+
+      - alert: NCCLSlowLink
+        expr: gpuwatch:node_xmit_wait:ratio_to_cluster_median > 2
+        for: 1m
+        labels:
+          severity: warning
+          runbook: runbook.md#5-nccl-slow-link
+        annotations:
+          summary: "{{ $labels.Hostname }} NIC transmit-wait {{ $value }}x cluster median"
+
+      - alert: NCCLBusBandwidthDrop
+        expr: |
+          avg(avg_over_time(gpuwatch_nccl_busbw_gb_per_second[2m]))
+            < 0.75 * avg(avg_over_time(gpuwatch_nccl_busbw_gb_per_second[30m] offset 10m))
+        for: 1m
+        labels:
+          severity: warning
+          runbook: runbook.md#5-nccl-slow-link
+        annotations:
+          summary: "Cluster all-reduce bus bandwidth dropped >25% vs the previous 30 minutes"
+
+      - alert: GPUWatchExporterSourceDown
+        expr: gpuwatch_exporter_up == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "gpuwatch-exporter source {{ $labels.source }} on {{ $labels.instance }} is failing"
+
+      - alert: GPUWatchDetectorAlertFiring
+        expr: sum by (kind) (gpuwatch_detector_active_alerts) > 0
+        labels:
+          severity: warning
+        annotations:
+          summary: "GPUWatch detector has {{ $value }} active {{ $labels.kind }} alert(s); see the fault timeline dashboard"
