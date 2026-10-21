@@ -107,11 +107,13 @@ class Detector:
                 # A gap in step data invalidates the window (job hung/restarted).
                 self._step.pop(n.node, None)
                 self._util.pop(n.node, None)
-            else:
-                self._step.setdefault(n.node, deque(maxlen=sw)).append(n.step_time_s)
-                if n.node in util_by_node:
-                    u = sum(util_by_node[n.node]) / len(util_by_node[n.node])
-                    self._util.setdefault(n.node, deque(maxlen=sw)).append(u)
+                # NIC back-pressure is only comparable across nodes under load.
+                self._wait.pop(n.node, None)
+                continue
+            self._step.setdefault(n.node, deque(maxlen=sw)).append(n.step_time_s)
+            if n.node in util_by_node:
+                u = sum(util_by_node[n.node]) / len(util_by_node[n.node])
+                self._util.setdefault(n.node, deque(maxlen=sw)).append(u)
             self._wait.setdefault(n.node, deque(maxlen=w)).append(n.net_xmit_wait)
 
     @staticmethod
