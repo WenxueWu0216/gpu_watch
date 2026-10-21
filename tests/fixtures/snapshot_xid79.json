@@ -1,0 +1,99 @@
+{
+ "ts": 20.0,
+ "gpus": [
+  {
+   "node": "node-00",
+   "gpu": 0,
+   "util_pct": 0.0,
+   "mem_used_mib": 0.0,
+   "mem_total_mib": 81559.0,
+   "temp_c": 39.92,
+   "power_w": 94.05,
+   "sm_clock_mhz": 346.6,
+   "throttle_reasons": 1,
+   "ecc_sbe_total": 0,
+   "ecc_dbe_total": 0,
+   "xid": 0,
+   "nvlink_gbps": 0.0,
+   "available": true
+  },
+  {
+   "node": "node-00",
+   "gpu": 1,
+   "util_pct": 0.0,
+   "mem_used_mib": 0.0,
+   "mem_total_mib": 81559.0,
+   "temp_c": 41.12,
+   "power_w": 92.61,
+   "sm_clock_mhz": 348.4,
+   "throttle_reasons": 1,
+   "ecc_sbe_total": 0,
+   "ecc_dbe_total": 0,
+   "xid": 0,
+   "nvlink_gbps": 0.0,
+   "available": true
+  },
+  {
+   "node": "node-01",
+   "gpu": 0,
+   "util_pct": 0.0,
+   "mem_used_mib": 0.0,
+   "mem_total_mib": 81559.0,
+   "temp_c": 40.26,
+   "power_w": 107.61,
+   "sm_clock_mhz": 343.5,
+   "throttle_reasons": 1,
+   "ecc_sbe_total": 0,
+   "ecc_dbe_total": 0,
+   "xid": 0,
+   "nvlink_gbps": 0.0,
+   "available": true
+  },
+  {
+   "node": "node-01",
+   "gpu": 1,
+   "util_pct": 0.0,
+   "mem_used_mib": 0.0,
+   "mem_total_mib": 81559.0,
+   "temp_c": 0.0,
+   "power_w": 0.0,
+   "sm_clock_mhz": 0.0,
+   "throttle_reasons": 0,
+   "ecc_sbe_total": 0,
+   "ecc_dbe_total": 0,
+   "xid": 79,
+   "nvlink_gbps": 0.0,
+   "available": false
+  }
+ ],
+ "nodes": [
+  {
+   "node": "node-00",
+   "step_time_s": null,
+   "net_tx_gbps": 0.25916005660179325,
+   "net_xmit_wait": 22.78198717039166,
+   "nccl_busbw_gb_s": null
+  },
+  {
+   "node": "node-01",
+   "step_time_s": null,
+   "net_tx_gbps": 0.19147865031416683,
+   "net_xmit_wait": 19.161682759357618,
+   "nccl_busbw_gb_s": null
+  }
+ ],
+ "logs": [
+  {
+   "ts": 20.0,
+   "node": "node-01",
+   "source": "kernel",
+   "message": "NVRM: Xid (PCI:0000:28:00): 79, pid='<unknown>', name=<unknown>, GPU has fallen off the bus."
+  },
+  {
+   "ts": 21.0,
+   "node": "node-01",
+   "source": "nccl",
+   "message": "NCCL WARN Cuda failure 'unspecified launch failure'"
+  }
+ ]
+}

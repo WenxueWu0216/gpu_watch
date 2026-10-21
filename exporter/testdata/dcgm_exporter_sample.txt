@@ -1,0 +1,16 @@
+# Synthetic sample in dcgm-exporter's text format (hand-written for tests;
+# NOT captured from real hardware). Hostname is omitted on purpose on one
+# series to exercise label back-filling.
+# HELP DCGM_FI_DEV_GPU_UTIL GPU utilization (in %).
+# TYPE DCGM_FI_DEV_GPU_UTIL gauge
+DCGM_FI_DEV_GPU_UTIL{gpu="0",UUID="GPU-aaaa",device="nvidia0",modelName="NVIDIA H100 80GB HBM3",Hostname="gpu-a"} 97
+DCGM_FI_DEV_GPU_UTIL{gpu="1",UUID="GPU-bbbb",device="nvidia1",modelName="NVIDIA H100 80GB HBM3"} 95
+# HELP DCGM_FI_DEV_GPU_TEMP GPU temperature (in C).
+# TYPE DCGM_FI_DEV_GPU_TEMP gauge
+DCGM_FI_DEV_GPU_TEMP{gpu="0",UUID="GPU-aaaa",device="nvidia0",modelName="NVIDIA H100 80GB HBM3",Hostname="gpu-a"} 61
+# HELP DCGM_FI_DEV_XID_ERRORS Value of the last XID error encountered.
+# TYPE DCGM_FI_DEV_XID_ERRORS gauge
+DCGM_FI_DEV_XID_ERRORS{gpu="0",UUID="GPU-aaaa",device="nvidia0",modelName="NVIDIA H100 80GB HBM3",Hostname="gpu-a",err_code="0",err_msg="No Error"} 0
+# HELP go_goroutines Number of goroutines that currently exist.
+# TYPE go_goroutines gauge
+go_goroutines 12
