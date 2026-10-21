@@ -15,7 +15,7 @@ setup: ## create venv and install all deps (incl. dev/otel/llm extras)
 test: test-py test-go ## run all unit tests
 
 test-py:
-	$(BIN)/pytest --cov=gpu_sim --cov=detector --cov=bringup --cov=tracing --cov=ai_diagnosis --cov=eval --cov-report=term-missing:skip-covered
+	$(BIN)/pytest --cov=gpu_sim --cov=detector --cov=bringup --cov=tracing --cov=ai_diagnosis --cov=eval --cov-report=term-missing:skip-covered --cov-fail-under=85
 
 test-go:
 	cd exporter && $(GO) test -race -cover ./...
