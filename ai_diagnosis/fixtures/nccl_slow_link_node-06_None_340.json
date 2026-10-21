@@ -1,0 +1,45 @@
+{
+  "incident_id": "nccl_slow_link:node-06:None:340",
+  "title": "Ungrounded model output: rejected entirely",
+  "provenance": "hand-authored for tests/demo; NOT recorded from the Anthropic API. Re-record with: python -m ai_diagnosis ... --backend anthropic --record",
+  "scenario": {
+    "faults": [
+      "network:node-06@300,mag=0.5"
+    ],
+    "seed": 7,
+    "kind": null
+  },
+  "prompt_sha": "e91de9726613ebef",
+  "evidence_sha": "c7608d4b550b7b2d",
+  "response": {
+    "status": "diagnosed",
+    "hypothesis": "The InfiniBand link on node-06 renegotiated to 100 Gb/s.",
+    "hypothesis_citations": [
+      "M42"
+    ],
+    "confidence": "high",
+    "claims": [
+      {
+        "text": "ibstat shows the port at 100 Gb/s instead of 400 Gb/s.",
+        "citations": [
+          "M3"
+        ]
+      },
+      {
+        "text": "Symbol errors are increasing on the switch port.",
+        "citations": [
+          "L7"
+        ]
+      },
+      {
+        "text": "The switch firmware is outdated.",
+        "citations": []
+      }
+    ],
+    "next_action": "Replace the cable.",
+    "next_action_citations": [
+      "M42"
+    ],
+    "missing_evidence": []
+  }
+}

@@ -19,7 +19,7 @@ otel = [
   "opentelemetry-sdk>=1.25",
   "opentelemetry-exporter-otlp-proto-http>=1.25",
 ]
-llm = ["anthropic>=0.70"]
+llm = ["anthropic>=2.0"]
 dev = [
   "pytest>=8",
   "pytest-cov>=5",

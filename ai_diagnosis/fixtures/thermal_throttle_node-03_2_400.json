@@ -1,0 +1,67 @@
+{
+  "incident_id": "thermal_throttle:node-03:2:400",
+  "title": "Grounded thermal diagnosis",
+  "provenance": "hand-authored for tests/demo; NOT recorded from the Anthropic API. Re-record with: python -m ai_diagnosis ... --backend anthropic --record",
+  "scenario": {
+    "faults": [
+      "thermal:node-03:2@300,mag=0.3"
+    ],
+    "seed": 7,
+    "kind": null
+  },
+  "prompt_sha": "e013b7918c4ecec1",
+  "evidence_sha": "b931603eb2b94ebe",
+  "response": {
+    "status": "diagnosed",
+    "hypothesis": "GPU 2 on node-03 is thermally throttling (SW_THERMAL), most likely due to degraded cooling on that GPU, since its same-node peers are much cooler.",
+    "hypothesis_citations": [
+      "A3",
+      "M1",
+      "M8"
+    ],
+    "confidence": "high",
+    "claims": [
+      {
+        "text": "GPU 2 temperature rose from 57.67 C to 88.65 C within the window.",
+        "citations": [
+          "M1"
+        ]
+      },
+      {
+        "text": "Its SM clock fell to 1762.7 MHz while same-node peers run at a median 1982.8 MHz.",
+        "citations": [
+          "M2",
+          "M8"
+        ]
+      },
+      {
+        "text": "The throttle-reasons bitmask is SW_THERMAL, not power capping.",
+        "citations": [
+          "A3",
+          "M4"
+        ]
+      },
+      {
+        "text": "Peer GPUs on node-03 sit at a median 66.71 C, so this is local to GPU 2 rather than a room/rack inlet problem.",
+        "citations": [
+          "M8"
+        ]
+      },
+      {
+        "text": "No ECC or XID activity accompanies the throttling.",
+        "citations": [
+          "M5",
+          "M6",
+          "M7"
+        ]
+      }
+    ],
+    "next_action": "Check fan/airflow and heatsink seating for node-03 GPU 2 (nvidia-smi -q -d TEMPERATURE,PERFORMANCE); if throttling persists, drain node-03 via the bring-up gate and re-run DCGM diag level 3.",
+    "next_action_citations": [
+      "A1",
+      "M1",
+      "M8"
+    ],
+    "missing_evidence": []
+  }
+}

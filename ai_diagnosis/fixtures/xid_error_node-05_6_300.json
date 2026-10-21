@@ -1,0 +1,65 @@
+{
+  "incident_id": "xid_error:node-05:6:300",
+  "title": "Grounded XID 79 diagnosis",
+  "provenance": "hand-authored for tests/demo; NOT recorded from the Anthropic API. Re-record with: python -m ai_diagnosis ... --backend anthropic --record",
+  "scenario": {
+    "faults": [
+      "xid:node-05:6@300"
+    ],
+    "seed": 7,
+    "kind": "xid_error"
+  },
+  "prompt_sha": "2b6c6050253f8229",
+  "evidence_sha": "65cf02c19e73054f",
+  "response": {
+    "status": "diagnosed",
+    "hypothesis": "GPU 6 on node-05 fell off the PCIe bus (XID 79), which crashed the collective and hung the job.",
+    "hypothesis_citations": [
+      "A1",
+      "L1",
+      "L2"
+    ],
+    "confidence": "high",
+    "claims": [
+      {
+        "text": "The kernel logged XID 79 'GPU has fallen off the bus' for node-05.",
+        "citations": [
+          "L1",
+          "A2"
+        ]
+      },
+      {
+        "text": "GPU 6 became unreadable from t=300s.",
+        "citations": [
+          "M1"
+        ]
+      },
+      {
+        "text": "NCCL reported 'unspecified launch failure' one second later, consistent with the job losing a rank.",
+        "citations": [
+          "L2"
+        ]
+      },
+      {
+        "text": "Before the event GPU 6 showed no thermal throttling and no ECC errors.",
+        "citations": [
+          "M5",
+          "M6",
+          "M7"
+        ]
+      },
+      {
+        "text": "Peer GPUs dropped to a median SM clock of 347.2 MHz, i.e. idle, after the failure.",
+        "citations": [
+          "M9"
+        ]
+      }
+    ],
+    "next_action": "Drain node-05, collect nvidia-bug-report.sh, then power-cycle (not just reboot) the node; if XID 79 recurs on GPU 6, reseat or RMA the GPU/riser.",
+    "next_action_citations": [
+      "A1",
+      "L1"
+    ],
+    "missing_evidence": []
+  }
+}
