@@ -37,6 +37,10 @@ def build(args: argparse.Namespace) -> HealthGate:
     """Wire checks, runners and the scheduler adapter from CLI args."""
     tool_runner: CommandRunner
     sched_runner: CommandRunner
+    wanted = {c.strip() for c in args.checks.split(",") if c.strip()}
+    unknown = wanted - {"driver", "burn_in", "nccl"}
+    if unknown:
+        raise SystemExit(f"unknown --checks {sorted(unknown)}")
     if args.backend == "sim":
         tool_runner = SimNodeRunner(
             node=args.node,
@@ -50,19 +54,22 @@ def build(args: argparse.Namespace) -> HealthGate:
         sched_runner = FakeRunner({"scontrol": slurm, "kubectl": kube})
         min_busbw = args.min_busbw if args.min_busbw is not None else SIM_MIN_BUSBW
     else:
-        if args.min_busbw is None:
+        if args.min_busbw is None and "nccl" in wanted:
             raise SystemExit(
                 "--min-busbw is required for --backend live (GB/s; it depends on "
                 "GPU model and interconnect, see README)"
             )
         tool_runner = sched_runner = SubprocessRunner()
-        min_busbw = args.min_busbw
-    checks: list[Check] = [DriverCheck(args.expected_gpus, args.min_driver)]
-    if args.burn_in != "none":
+        min_busbw = args.min_busbw or 0.0
+    checks: list[Check] = []
+    if "driver" in wanted:
+        checks.append(DriverCheck(args.expected_gpus, args.min_driver))
+    if "burn_in" in wanted and args.burn_in != "none":
         checks.append(
             BurnInCheck(tool=args.burn_in, level=args.dcgm_level, duration_s=args.burn_seconds)
         )
-    checks.append(NcclCheck(min_busbw, command_template=args.nccl_cmd))
+    if "nccl" in wanted:
+        checks.append(NcclCheck(min_busbw, command_template=args.nccl_cmd))
     guard = MutationGuard(sched_runner, dry_run=not args.execute)
     scheduler: SchedulerAdapter
     if args.scheduler == "slurm":
@@ -86,6 +93,11 @@ def main(argv: list[str] | None = None) -> int:
         "--execute", action="store_true", help="really run drain/resume commands (default: dry-run)"
     )
     p.add_argument("--report-dir", default="reports")
+    p.add_argument(
+        "--checks",
+        default="driver,burn_in,nccl",
+        help="comma-separated subset of driver,burn_in,nccl",
+    )
     p.add_argument("--expected-gpus", type=int, default=8)
     p.add_argument("--min-driver", default="535.0")
     p.add_argument("--burn-in", choices=["dcgm", "gpu_burn", "none"], default="dcgm")

@@ -22,6 +22,7 @@ from ai_diagnosis.diagnose import (
     validate,
 )
 from ai_diagnosis.incident import EvidenceItem, Incident
+from detector import Detector
 from detector.events import Event, EventKind, Severity
 
 ALL_FIXTURES = sorted(FIXTURES.glob("*.json"))
@@ -231,3 +232,69 @@ def test_cli_replay(capsys):
     out = json.loads(capsys.readouterr().out)
     assert out["status"] == "diagnosed"
     assert diag_main(["--seed", "1"]) in (0, 1)  # healthy run: usually no alert
+
+
+class SnapshotProm:
+    """Fake Prometheus /api/v1/query answering from simulator snapshots."""
+
+    def __init__(self, snaps):
+        from detector.sources import DEFAULT_GPU_QUERIES, DEFAULT_NODE_QUERIES
+
+        self.snaps = snaps
+        self.gpu_q = {v: k for k, v in DEFAULT_GPU_QUERIES.items()}
+        self.node_q = {v: k for k, v in DEFAULT_NODE_QUERIES.items()}
+
+    def get(self, url, params, timeout):
+        t = float(params["time"])
+        past = [s for s in self.snaps if s.ts <= t + 1e-6]
+        q = params["query"]
+        res = []
+        snap = past[-1] if past else None
+        if snap is None:
+            pass  # no data yet at this time: empty vector, like Prometheus
+        elif q in self.gpu_q:
+            fld = self.gpu_q[q]
+            for g in snap.gpus:
+                if not g.available and fld not in ("xid", "ecc_sbe_total", "ecc_dbe_total"):
+                    continue
+                v = g.mem_total_mib - g.mem_used_mib if fld == "mem_free_mib" else getattr(g, fld)
+                res.append(
+                    {"metric": {"Hostname": g.node, "gpu": str(g.gpu)}, "value": [t, str(float(v))]}
+                )
+        elif q in self.node_q:
+            fld = self.node_q[q]
+            for n in snap.nodes:
+                v = getattr(n, fld)
+                if v is not None:
+                    res.append({"metric": {"Hostname": n.node}, "value": [t, str(float(v))]})
+        return SimpleNamespace(
+            raise_for_status=lambda: None,
+            json=lambda: {"status": "success", "data": {"result": res}},
+        )
+
+
+def test_incident_from_live_prometheus_and_kernel_log(tmp_path):
+    from ai_diagnosis.__main__ import incident_from_live
+    from gpu_sim import ClusterSim, Fault
+
+    sim = ClusterSim(seed=7, faults=[Fault.parse("xid:node-05:6@300")])
+    snaps = list(sim.run(400))
+    events = Detector().run(snaps)
+    path = tmp_path / "events.jsonl"
+    path.write_text("\n".join(e.to_json() for e in events) + "\n")
+    klog = tmp_path / "kernel.log"
+    klog.write_text(
+        "299.5 node-05 kernel: NVRM: Xid (PCI:0000:78:00): 79, GPU has fallen off "
+        "the bus.\nnot-a-timestamp line\n"
+    )
+    inc = incident_from_live(
+        path, "http://prom", kind="xid_error", kernel_log=klog, session=SnapshotProm(snaps)
+    )
+    assert inc is not None and inc.alert.kind is EventKind.XID
+    texts = [i.text for i in inc.items]
+    assert any("DCGM_FI_DEV_XID_ERRORS{node=node-05,gpu=6}" in t and "last=79" in t for t in texts)
+    assert any("fallen off the bus" in i.text and i.kind == "log" for i in inc.items)
+    assert (
+        incident_from_live(path, "http://prom", kind="straggler", session=SnapshotProm(snaps))
+        is None
+    )

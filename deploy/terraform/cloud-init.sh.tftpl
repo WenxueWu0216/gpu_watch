@@ -1,0 +1,6 @@
+#!/bin/bash
+# Minimal: clone the repo. Node setup is an explicit, re-runnable step
+# (sudo /opt/gpuwatch/deploy/scripts/setup_node.sh) so failures are visible.
+set -euxo pipefail
+git clone --branch "${repo_ref}" "${repo_url}" /opt/gpuwatch || true
+chown -R ubuntu:ubuntu /opt/gpuwatch

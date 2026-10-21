@@ -324,3 +324,14 @@ def test_cli_sim_pass_and_fail(tmp_path, capsys):
 def test_cli_live_requires_threshold():
     with pytest.raises(SystemExit, match="min-busbw"):
         bringup_main(["--node", "x", "--backend", "live"])
+
+
+def test_cli_checks_subset(tmp_path, capsys):
+    rc = bringup_main(["--node", "node-01", "--checks", "driver", "--report-dir", str(tmp_path)])
+    out = capsys.readouterr().out
+    assert rc == 0 and "driver" in out and "nccl_allreduce" not in out
+    with pytest.raises(SystemExit, match="unknown --checks"):
+        bringup_main(["--node", "x", "--checks", "driver,bogus"])
+    # live driver-only gate does not need a busbw threshold (argument parsing only)
+    with pytest.raises(SystemExit, match="unknown --checks"):
+        bringup_main(["--node", "x", "--backend", "live", "--checks", "bogus"])
