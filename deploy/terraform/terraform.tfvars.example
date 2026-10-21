@@ -1,0 +1,4 @@
+region         = "us-east-1"
+instance_type  = "g5.12xlarge"
+key_name       = "my-keypair"
+ssh_cidr       = "203.0.113.7/32"

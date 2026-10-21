@@ -22,3 +22,12 @@ def test_detector_queries_cover_every_contract_metric():
 def test_go_fixtures_are_valid_snapshots():
     for f in ("snapshot_healthy.json", "snapshot_xid79.json"):
         Snapshot.from_dict(json.loads((ROOT / "tests/fixtures" / f).read_text()))
+
+
+def test_dcgm_counters_csv_matches_gpu_metrics():
+    rows = [
+        line.split(",")[0].strip()
+        for line in (ROOT / "deploy/dcgm/gpuwatch-counters.csv").read_text().splitlines()
+        if line.strip() and not line.startswith("#")
+    ]
+    assert rows == list(m.GPU_METRICS)
