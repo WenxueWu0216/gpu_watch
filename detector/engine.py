@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from collections import deque
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -18,6 +19,7 @@ from gpu_sim.model import (
     THROTTLE_SW_THERMAL,
     Snapshot,
 )
+from tracing.otel import get_meter, get_tracer
 
 AlertKey = tuple[EventKind, str | None, int | None, str]
 
@@ -70,18 +72,53 @@ class Detector:
         self._busbw_win: deque[float] = deque(maxlen=w)
         self._busbw_hist: deque[float] = deque(maxlen=self.cfg.busbw_baseline_scrapes)
         self._alerts: dict[AlertKey, _AlertState] = {}
+        self._tracer = get_tracer("gpuwatch.detector")
+        meter = get_meter("gpuwatch.detector")
+        self._m_events = meter.create_counter(
+            "gpuwatch.detector.events", description="Detector events by kind/severity/state"
+        )
+        self._m_active = meter.create_up_down_counter(
+            "gpuwatch.detector.active_alerts", description="Currently firing detector alerts"
+        )
+        self._m_latency = meter.create_histogram(
+            "gpuwatch.detector.observe.duration",
+            unit="ms",
+            description="Time to evaluate one snapshot",
+        )
 
     # ----------------------------------------------------------------- public
     def observe(self, snap: Snapshot) -> list[Event]:
         """Ingest one snapshot and return state-change events."""
-        cands: dict[AlertKey, _Candidate] = {}
-        self._update_windows(snap)
-        self._check_hardware(snap, cands)
-        self._check_thermal(snap, cands)
-        self._check_straggler(snap, cands)
-        self._check_network(snap, cands)
-        self._check_busbw(snap, cands)
-        return self._advance(snap.ts, cands)
+        t0 = time.perf_counter()
+        with self._tracer.start_as_current_span("detector.observe") as span:
+            cands: dict[AlertKey, _Candidate] = {}
+            self._update_windows(snap)
+            self._check_hardware(snap, cands)
+            self._check_thermal(snap, cands)
+            self._check_straggler(snap, cands)
+            self._check_network(snap, cands)
+            self._check_busbw(snap, cands)
+            events = self._advance(snap.ts, cands)
+            if span.is_recording():
+                span.set_attribute("gpuwatch.snapshot.ts", snap.ts)
+                span.set_attribute("gpuwatch.snapshot.gpus", len(snap.gpus))
+                span.set_attribute("gpuwatch.candidates", len(cands))
+                span.set_attribute("gpuwatch.events", len(events))
+                for ev in events:
+                    span.add_event(
+                        f"{ev.state}:{ev.kind.value}",
+                        {
+                            "severity": ev.severity.value,
+                            "node": ev.node or "",
+                            "gpu": -1 if ev.gpu is None else ev.gpu,
+                            "summary": ev.summary,
+                        },
+                    )
+        for ev in events:
+            attrs = {"kind": ev.kind.value, "severity": ev.severity.value, "state": ev.state}
+            self._m_events.add(1, attrs)
+        self._m_latency.record((time.perf_counter() - t0) * 1000.0)
+        return events
 
     def run(self, snapshots: Iterable[Snapshot]) -> list[Event]:
         """Convenience: observe every snapshot and return all events."""
@@ -417,6 +454,8 @@ class Detector:
             st.clean = 0
             escalated = st.firing and c.severity.rank > st.severity.rank
             if (not st.firing and st.pending >= c.persistence) or escalated:
+                if not st.firing:
+                    self._m_active.add(1, {"kind": key[0].value})
                 st.firing = True
                 st.severity = c.severity
                 st.fired_at = ts if st.fired_at is None else st.fired_at
@@ -428,6 +467,7 @@ class Detector:
             if st.firing:
                 st.clean += 1
                 if st.clean >= self.cfg.resolve_after:
+                    self._m_active.add(-1, {"kind": key[0].value})
                     st.firing = False
                     st.fired_at = None
                     st.severity = Severity.INFO

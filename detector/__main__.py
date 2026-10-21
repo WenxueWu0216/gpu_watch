@@ -10,6 +10,7 @@ from detector.config import DetectorConfig
 from detector.engine import Detector
 from detector.sources import JsonlSource, PrometheusSource, SimSource, SnapshotSource
 from gpu_sim import ClusterConfig, ClusterSim, Fault
+from tracing.otel import setup_telemetry
 
 
 def build_source(args: argparse.Namespace) -> SnapshotSource:
@@ -38,6 +39,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--source", choices=["sim", "jsonl", "prometheus"], default="sim")
     p.add_argument("--config", help="detector YAML (default detector/config.yaml)")
     p.add_argument("--all-states", action="store_true", help="also print resolved events")
+    p.add_argument(
+        "--otlp-endpoint", help="OTLP/HTTP collector URL (default $OTEL_EXPORTER_OTLP_ENDPOINT)"
+    )
     sim = p.add_argument_group("sim")
     sim.add_argument("--nodes", type=int, default=8)
     sim.add_argument("--gpus", type=int, default=8)
@@ -53,6 +57,7 @@ def main(argv: list[str] | None = None) -> int:
     prom.add_argument("--max-polls", type=int)
     args = p.parse_args(argv)
 
+    setup_telemetry("gpuwatch-detector", args.otlp_endpoint)
     detector = Detector(DetectorConfig.load(args.config))
     for snap in build_source(args):
         for ev in detector.observe(snap):
