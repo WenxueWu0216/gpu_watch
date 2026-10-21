@@ -1,0 +1,23 @@
+# GPUWatch detector thresholds. See detector/config.py for the meaning of each key.
+# Scrape interval assumed: 10 s (sim default; set Prometheus scrape_interval to match).
+window: 6
+step_window: 12
+persistence: 3
+resolve_after: 6
+z_threshold: 3.5
+step_mad_floor: 0.01
+step_min_rel: 0.05
+step_critical_rel: 0.25
+pairwise_min_rel: 0.10
+util_mad_floor: 0.02
+thermal_temp_c: 87.0
+thermal_critical_temp_c: 92.0
+thermal_clock_drop: 0.10
+thermal_persistence: 3
+sbe_window_delta: 10
+net_mad_floor: 0.05
+net_min_rel: 0.30
+net_critical_rel: 2.0
+busbw_drop: 0.25
+busbw_baseline_scrapes: 60
+xid_critical: [48, 61, 62, 63, 64, 74, 79, 92, 94, 95, 119, 120, 140]

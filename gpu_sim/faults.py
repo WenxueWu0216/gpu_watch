@@ -108,13 +108,13 @@ def random_fault(
     start = rng.uniform(*start_window)
     gpu = rng.randrange(gpus_per_node) if kind in GPU_SCOPED else None
     if kind is FaultKind.THERMAL:
-        return Fault(kind, node, start, gpu, magnitude=rng.uniform(0.05, 0.35))
+        return Fault(kind, node, start, gpu, magnitude=rng.uniform(0.02, 0.35))
     if kind is FaultKind.XID:
         return Fault(kind, node, start, gpu, magnitude=1.0, variant="79")
     if kind is FaultKind.ECC:
         variant = "dbe" if rng.random() < 0.5 else "sbe"
-        return Fault(kind, node, start, gpu, magnitude=rng.uniform(1.0, 60.0), variant=variant)
+        return Fault(kind, node, start, gpu, magnitude=rng.uniform(0.2, 60.0), variant=variant)
     if kind is FaultKind.STRAGGLER:
         variant = "host" if rng.random() < 0.5 else "gpu"
-        return Fault(kind, node, start, None, magnitude=rng.uniform(1.03, 1.40), variant=variant)
-    return Fault(kind, node, start, None, magnitude=rng.uniform(0.30, 0.95))
+        return Fault(kind, node, start, None, magnitude=rng.uniform(1.01, 1.40), variant=variant)
+    return Fault(kind, node, start, None, magnitude=rng.uniform(0.30, 0.98))
