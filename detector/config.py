@@ -13,7 +13,7 @@ DEFAULT_CONFIG_PATH = Path(__file__).with_name("config.yaml")
 # XIDs that indicate hardware / driver faults requiring node action (NVIDIA
 # "XID Errors" guide). 13/31/43/45 are commonly triggered by application bugs
 # and are reported as warnings instead.
-DEFAULT_XID_CRITICAL = (48, 61, 62, 63, 64, 74, 79, 92, 94, 95, 119, 120, 140)
+DEFAULT_XID_CRITICAL = (48, 61, 62, 63, 64, 74, 79, 92, 94, 95, 119, 120)
 
 
 @dataclass(frozen=True)
