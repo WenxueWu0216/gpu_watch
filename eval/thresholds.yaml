@@ -1,0 +1,17 @@
+# CI gate for `make eval` (exit code 1 if violated).
+#
+# These are regression gates, not targets. Each floor sits a few points below
+# the simulated rate measured when the gate was introduced, so a change that
+# makes the detector meaningfully less sensitive (or noisier) fails CI while
+# small seed-level variation does not. The straggler floor is lowest because
+# the injected severity range deliberately includes 1-5% slowdowns, below the
+# detector's documented 5% practical-significance floor. See README
+# "Evaluation" for the rationale.
+min_detection_rate:
+  thermal: 0.95
+  xid: 0.99
+  ecc: 0.95
+  straggler: 0.85
+  network: 0.95
+# Fraction of healthy runs allowed to raise >= 1 event of any kind.
+max_healthy_fp_rate: 0.05
