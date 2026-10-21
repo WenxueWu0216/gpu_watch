@@ -1,0 +1,9 @@
+.venv
+.git
+**/__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+exporter/bin
+reports
+deploy/terraform/.terraform
