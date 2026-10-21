@@ -201,6 +201,22 @@ func TestLiveModeMergesDCGMTextfileAndIB(t *testing.T) {
 	}
 }
 
+func TestForceHostnameOverwritesDCGMLabel(t *testing.T) {
+	dcgm := serveBytes(t, readFile(t, "testdata/dcgm_exporter_sample.txt"), 200)
+	src := &DCGMSource{URL: dcgm.URL, Hostname: "node-x", Force: true, Client: http.DefaultClient}
+	fams, err := src.Collect(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf strings.Builder
+	if err := fams.write(&buf); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(buf.String(), `Hostname="gpu-a"`) || !strings.Contains(buf.String(), `Hostname="node-x"`) {
+		t.Errorf("hostname not forced:\n%s", buf.String())
+	}
+}
+
 func TestTextfileParseErrorMarksSourceDown(t *testing.T) {
 	dir := t.TempDir()
 	_ = os.WriteFile(filepath.Join(dir, "bad.prom"), []byte("this is { not valid\n"), 0o644)

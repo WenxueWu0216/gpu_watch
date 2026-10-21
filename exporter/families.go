@@ -78,14 +78,18 @@ func parseText(r io.Reader) (Families, error) {
 	return Families(parsed), nil
 }
 
-// setLabelIfMissing adds label name=value to every sample lacking it.
-func (f Families) setLabelIfMissing(name, value string) {
+// setLabel sets label name=value on every sample; existing values are
+// replaced only when overwrite is true.
+func (f Families) setLabel(name, value string, overwrite bool) {
 	for _, mf := range f {
 		for _, m := range mf.Metric {
 			found := false
 			for _, lp := range m.Label {
 				if lp.GetName() == name {
 					found = true
+					if overwrite {
+						lp.Value = proto.String(value)
+					}
 					break
 				}
 			}

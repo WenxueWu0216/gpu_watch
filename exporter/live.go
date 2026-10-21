@@ -20,7 +20,9 @@ import (
 type DCGMSource struct {
 	URL      string
 	Hostname string
-	Client   *http.Client
+	// Force replaces any Hostname label (dcgm-exporter in a pod reports the pod name).
+	Force  bool
+	Client *http.Client
 }
 
 // Collect implements Collector.
@@ -48,7 +50,7 @@ func (d *DCGMSource) Collect(ctx context.Context) (Families, error) {
 		}
 	}
 	if d.Hostname != "" {
-		out.setLabelIfMissing("Hostname", d.Hostname)
+		out.setLabel("Hostname", d.Hostname, d.Force)
 	}
 	return out, nil
 }
@@ -58,6 +60,7 @@ func (d *DCGMSource) Collect(ctx context.Context) (Families, error) {
 type TextfileSource struct {
 	Dir      string
 	Hostname string
+	Force    bool
 	MaxAge   time.Duration
 	Now      func() time.Time
 }
@@ -98,7 +101,7 @@ func (t *TextfileSource) Collect(_ context.Context) (Families, error) {
 		out.merge(fams)
 	}
 	if t.Hostname != "" {
-		out.setLabelIfMissing("Hostname", t.Hostname)
+		out.setLabel("Hostname", t.Hostname, t.Force)
 	}
 	return out, errors.Join(errs...)
 }

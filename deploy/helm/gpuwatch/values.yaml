@@ -1,0 +1,49 @@
+# GPUWatch Helm values. Everything here is NOT VERIFIED IN CI against a real
+# GPU cluster; `helm lint` / `helm template` run in CI.
+image:
+  python: ghcr.io/wenxuewu0216/gpuwatch:0.1.0           # built from ./Dockerfile
+  exporter: ghcr.io/wenxuewu0216/gpuwatch-exporter:0.1.0 # built from ./exporter/Dockerfile
+  bringup: ghcr.io/wenxuewu0216/gpuwatch-bringup:0.1.0   # deploy/docker/bringup.Dockerfile
+  pullPolicy: IfNotPresent
+
+# Nodes that carry GPUs (label set by NVIDIA GPU Feature Discovery / GPU Operator).
+gpuNodeSelector:
+  nvidia.com/gpu.present: "true"
+runtimeClassName: nvidia
+
+# Host directory shared by the DDP benchmark (writer) and the exporter (reader).
+textfileHostPath: /var/lib/gpuwatch/textfile
+
+exporter:
+  enabled: true
+  port: 9400
+  # Run NVIDIA dcgm-exporter as a sidecar on localhost:9401 with GPUWatch's
+  # counter list. Disable if dcgm-exporter already runs (e.g. GPU Operator)
+  # and set dcgmUrl to reach it.
+  dcgmSidecar:
+    enabled: true
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.3.8-3.6.0-ubuntu22.04
+  dcgmUrl: http://127.0.0.1:9401/metrics
+  infinibandSysfs: /sys/class/infiniband
+
+detector:
+  enabled: true
+  prometheusUrl: http://prometheus-server.monitoring.svc:80
+  otlpEndpoint: ""        # e.g. http://otel-collector.monitoring.svc:4318
+  interval: 10
+
+ddpBench:
+  enabled: false
+  nodes: 2
+  gpusPerNode: 8
+  steps: 2000
+  extraArgs: []           # e.g. ["--slow-rank", "3", "--slow-factor", "1.3"]
+  image: nvcr.io/nvidia/pytorch:24.08-py3
+
+bringup:
+  enabled: false
+  node: ""                # node to gate (required when enabled)
+  minBusbw: 0             # GB/s, required: depends on GPU model and interconnect
+  execute: false          # false = dry-run: print cordon/drain commands only
+  burnIn: dcgm
+  extraArgs: []

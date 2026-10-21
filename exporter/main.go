@@ -36,6 +36,7 @@ type Config struct {
 	TextfileDir string
 	IBRoot      string
 	Hostname    string
+	ForceHost   bool
 	Timeout     time.Duration
 }
 
@@ -50,6 +51,7 @@ func parseFlags(args []string) (Config, error) {
 	fs.StringVar(&c.TextfileDir, "textfile-dir", "/var/lib/gpuwatch/textfile", "directory of *.prom files (live mode; empty disables)")
 	fs.StringVar(&c.IBRoot, "ib-root", "/sys/class/infiniband", "InfiniBand sysfs root (live mode; empty disables)")
 	fs.StringVar(&c.Hostname, "hostname", host, "Hostname label for series that lack one")
+	fs.BoolVar(&c.ForceHost, "force-hostname", false, "overwrite Hostname on all live series with --hostname")
 	fs.DurationVar(&c.Timeout, "timeout", 5*time.Second, "per-source collection timeout")
 	if err := fs.Parse(args); err != nil {
 		return c, err
@@ -66,9 +68,9 @@ func BuildCollectors(c Config) []Named {
 	if c.Mode == "sim" {
 		return []Named{{"sim", &SimSource{URL: c.SimURL, Client: client}}}
 	}
-	out := []Named{{"dcgm", &DCGMSource{URL: c.DCGMURL, Hostname: c.Hostname, Client: client}}}
+	out := []Named{{"dcgm", &DCGMSource{URL: c.DCGMURL, Hostname: c.Hostname, Force: c.ForceHost, Client: client}}}
 	if c.TextfileDir != "" {
-		out = append(out, Named{"textfile", &TextfileSource{Dir: c.TextfileDir, Hostname: c.Hostname, MaxAge: 2 * time.Minute}})
+		out = append(out, Named{"textfile", &TextfileSource{Dir: c.TextfileDir, Hostname: c.Hostname, Force: c.ForceHost, MaxAge: 2 * time.Minute}})
 	}
 	if c.IBRoot != "" {
 		if _, err := os.Stat(c.IBRoot); err == nil {

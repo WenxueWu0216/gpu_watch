@@ -1,0 +1,76 @@
+{{- if .Values.ddpBench.enabled }}
+# Multi-node PyTorch DDP benchmark: an Indexed Job (one pod per node) plus a
+# headless Service so pod 0 is reachable as the rendezvous endpoint.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-ddp
+  labels: {{- include "gpuwatch.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    job-name: {{ .Release.Name }}-ddp-bench
+  ports:
+    - {name: rdzv, port: 29500}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-ddp-bench
+  labels: {{- include "gpuwatch.labels" . | nindent 4 }}
+spec:
+  completionMode: Indexed
+  completions: {{ .Values.ddpBench.nodes }}
+  parallelism: {{ .Values.ddpBench.nodes }}
+  backoffLimit: 0
+  template:
+    spec:
+      subdomain: {{ .Release.Name }}-ddp
+      restartPolicy: Never
+      nodeSelector: {{- toYaml .Values.gpuNodeSelector | nindent 8 }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels: {job-name: {{ .Release.Name }}-ddp-bench}
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: bench
+          image: {{ .Values.ddpBench.image }}
+          command: ["bash", "-c"]
+          args:
+            - >-
+              torchrun --nnodes={{ .Values.ddpBench.nodes }}
+              --nproc-per-node={{ .Values.ddpBench.gpusPerNode }}
+              --node-rank=$(JOB_COMPLETION_INDEX)
+              --master-addr={{ .Release.Name }}-ddp-bench-0.{{ .Release.Name }}-ddp
+              --master-port=29500
+              /workload/ddp_bench.py --steps {{ .Values.ddpBench.steps }}
+              --textfile-dir /textfile {{ join " " .Values.ddpBench.extraArgs }}
+          env:
+            - name: GPUWATCH_HOSTNAME
+              valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+          resources:
+            limits:
+              nvidia.com/gpu: {{ .Values.ddpBench.gpusPerNode }}
+          volumeMounts:
+            - {name: workload, mountPath: /workload}
+            - {name: textfile, mountPath: /textfile}
+            - {name: shm, mountPath: /dev/shm}
+      volumes:
+        - name: workload
+          configMap: {name: {{ .Release.Name }}-ddp-workload}
+        - name: textfile
+          hostPath: {path: {{ .Values.textfileHostPath }}, type: DirectoryOrCreate}
+        - name: shm
+          emptyDir: {medium: Memory, sizeLimit: 16Gi}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-ddp-workload
+  labels: {{- include "gpuwatch.labels" . | nindent 4 }}
+data:
+  ddp_bench.py: |-
+{{ .Files.Get "files/ddp_bench.py" | indent 4 }}
+{{- end }}
