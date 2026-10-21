@@ -161,6 +161,16 @@ def _pct(values: list[float], q: float) -> float:
     return s[min(len(s) - 1, round(q * (len(s) - 1)))]
 
 
+def _bucket_row(label: str, runs: list[RunResult]) -> dict[str, Any]:
+    ttd = [r.ttd_s for r in runs if r.ttd_s is not None]
+    return {
+        "bucket": label,
+        "runs": len(runs),
+        "detected": sum(r.detected for r in runs),
+        "ttd_median_s": round(statistics.median(ttd), 1) if ttd else None,
+    }
+
+
 def summarize(results: Iterable[RunResult], duration_s: float) -> dict[str, Any]:
     """Aggregate per-run results into the metrics reported in docs/results.md."""
     rs = list(results)
@@ -187,18 +197,11 @@ def summarize(results: Iterable[RunResult], duration_s: float) -> dict[str, Any]
         for label, lo, hi in BUCKETS.get(kind, []):
             b = [r for r in runs if lo <= r.magnitude < hi]
             if b:
-                rows.append(
-                    {"bucket": label, "runs": len(b), "detected": sum(r.detected for r in b)}
-                )
+                rows.append(_bucket_row(label, b))
         if kind in (FaultKind.STRAGGLER, FaultKind.ECC):
             for variant in sorted({r.variant for r in runs}):
-                b = [r for r in runs if r.variant == variant]
                 rows.append(
-                    {
-                        "bucket": f"variant={variant}",
-                        "runs": len(b),
-                        "detected": sum(r.detected for r in b),
-                    }
+                    _bucket_row(f"variant={variant}", [r for r in runs if r.variant == variant])
                 )
         if rows:
             out["buckets"][kind.value] = rows
@@ -301,12 +304,12 @@ def render_markdown(
     for kind, rows in summary["buckets"].items():
         out.append(f"**{kind}**")
         out.append("")
-        out.append("| Bucket | Runs | Detected | Rate |")
-        out.append("|---|---:|---:|---:|")
+        out.append("| Bucket | Runs | Detected | Rate | TTD median (sim s) |")
+        out.append("|---|---:|---:|---:|---:|")
         for r in rows:
             out.append(
                 f"| {r['bucket']} | {r['runs']} | {r['detected']} | "
-                f"{r['detected'] / r['runs'] * 100:.1f}% |"
+                f"{r['detected'] / r['runs'] * 100:.1f}% | {_fmt(r['ttd_median_s'])} |"
             )
         out.append("")
     out += [
