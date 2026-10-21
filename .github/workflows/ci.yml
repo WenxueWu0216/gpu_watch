@@ -1,0 +1,92 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11", cache: pip}
+      - run: pip install -e ".[dev,otel,llm]"
+      - name: ruff
+        run: ruff check . && ruff format --check .
+      - name: mypy
+        run: mypy
+      - name: pytest (sim backends only; no GPU, no API key)
+        run: pytest --cov=gpu_sim --cov=detector --cov=bringup --cov=tracing --cov=ai_diagnosis --cov=eval --cov-report=term-missing:skip-covered --cov-fail-under=85
+
+  go:
+    runs-on: ubuntu-latest
+    defaults: {run: {working-directory: exporter}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version: "1.24", cache-dependency-path: exporter/go.sum}
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - run: go vet ./...
+      - run: go test -race -cover ./...
+      - uses: golangci/golangci-lint-action@v6
+        with: {version: v1.64.8, working-directory: exporter}
+
+  eval-gate:
+    # Fails if any detection rate drops below eval/thresholds.yaml, or if the
+    # committed docs/results.* / README table differ from a fresh `make eval`.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11", cache: pip}
+      - run: pip install -e ".[dev]"
+      - run: python -m eval
+      - name: results committed and up to date
+        run: git diff --exit-code -- docs/results.md docs/results.json README.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: eval-results, path: docs/results.*}
+
+  validate-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: promtool check + unit-test alert rules
+        run: |
+          curl -fsSL https://github.com/prometheus/prometheus/releases/download/v2.55.1/prometheus-2.55.1.linux-amd64.tar.gz | tar xz
+          ./prometheus-2.55.1.linux-amd64/promtool check rules dashboards/alerts/gpuwatch.rules.yaml
+          ./prometheus-2.55.1.linux-amd64/promtool test rules dashboards/alerts/tests/gpuwatch.rules.test.yaml
+      - uses: azure/setup-helm@v4
+        with: {version: v3.16.4}
+      - name: helm lint + kubeconform
+        run: |
+          helm lint deploy/helm/gpuwatch
+          helm template t deploy/helm/gpuwatch --set ddpBench.enabled=true \
+            --set bringup.enabled=true --set bringup.node=gpu-a --set bringup.minBusbw=40 > rendered.yaml
+          curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
+          ./kubeconform -strict -summary rendered.yaml
+      - uses: hashicorp/setup-terraform@v3
+        with: {terraform_version: 1.9.8}
+      - name: terraform fmt + validate (no apply)
+        working-directory: deploy/terraform
+        run: terraform fmt -check -recursive && terraform init -backend=false -input=false && terraform validate
+      - name: shellcheck
+        run: shellcheck deploy/slurm/*.sh deploy/slurm/*.sbatch deploy/scripts/*.sh
+      - name: docker compose config
+        run: docker compose config -q
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t gpuwatch:ci .
+      - run: docker build -t gpuwatch-exporter:ci exporter
