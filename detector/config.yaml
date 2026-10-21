@@ -20,4 +20,4 @@ net_min_rel: 0.30
 net_critical_rel: 2.0
 busbw_drop: 0.25
 busbw_baseline_scrapes: 60
-xid_critical: [48, 61, 62, 63, 64, 74, 79, 92, 94, 95, 119, 120, 140]
+xid_critical: [48, 61, 62, 63, 64, 74, 79, 92, 94, 95, 119, 120]
