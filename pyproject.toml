@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gpuwatch"
+version = "0.1.0"
+description = "GPU cluster telemetry, fault detection, and node health gating (sim + live backends)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "PyYAML>=6.0",
+  "requests>=2.31",
+]
+
+[project.optional-dependencies]
+otel = [
+  "opentelemetry-api>=1.25",
+  "opentelemetry-sdk>=1.25",
+  "opentelemetry-exporter-otlp-proto-http>=1.25",
+]
+llm = ["anthropic>=0.70"]
+dev = [
+  "pytest>=8",
+  "pytest-cov>=5",
+  "ruff>=0.6",
+  "mypy>=1.10",
+  "types-requests",
+  "types-PyYAML",
+]
+
+[tool.setuptools]
+packages = [
+  "gpu_sim", "detector", "bringup", "tracing", "ai_diagnosis", "eval",
+]
+
+[tool.setuptools.package-data]
+ai_diagnosis = ["fixtures/*.json"]
+eval = ["*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "D", "ANN", "SIM", "RUF"]
+ignore = ["D203", "D213", "D105", "D107", "D413", "ANN401"]
+pydocstyle.convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["D", "ANN"]
+"deploy/*" = ["D", "ANN"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+files = ["gpu_sim", "detector", "bringup", "tracing", "ai_diagnosis", "eval"]
