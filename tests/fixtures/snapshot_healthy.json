@@ -1,0 +1,86 @@
+{
+ "ts": 10.0,
+ "gpus": [
+  {
+   "node": "node-00",
+   "gpu": 0,
+   "util_pct": 85.97,
+   "mem_used_mib": 70334.9,
+   "mem_total_mib": 81559.0,
+   "temp_c": 39.92,
+   "power_w": 670.35,
+   "sm_clock_mhz": 1979.6,
+   "throttle_reasons": 0,
+   "ecc_sbe_total": 0,
+   "ecc_dbe_total": 0,
+   "xid": 0,
+   "nvlink_gbps": 263.64,
+   "available": true
+  },
+  {
+   "node": "node-00",
+   "gpu": 1,
+   "util_pct": 87.45,
+   "mem_used_mib": 70326.9,
+   "mem_total_mib": 81559.0,
+   "temp_c": 40.54,
+   "power_w": 656.5,
+   "sm_clock_mhz": 1980.0,
+   "throttle_reasons": 0,
+   "ecc_sbe_total": 0,
+   "ecc_dbe_total": 0,
+   "xid": 0,
+   "nvlink_gbps": 246.04,
+   "available": true
+  },
+  {
+   "node": "node-01",
+   "gpu": 0,
+   "util_pct": 90.74,
+   "mem_used_mib": 70569.1,
+   "mem_total_mib": 81559.0,
+   "temp_c": 40.33,
+   "power_w": 675.15,
+   "sm_clock_mhz": 1983.9,
+   "throttle_reasons": 0,
+   "ecc_sbe_total": 0,
+   "ecc_dbe_total": 0,
+   "xid": 0,
+   "nvlink_gbps": 256.68,
+   "available": true
+  },
+  {
+   "node": "node-01",
+   "gpu": 1,
+   "util_pct": 87.42,
+   "mem_used_mib": 69820.6,
+   "mem_total_mib": 81559.0,
+   "temp_c": 40.32,
+   "power_w": 652.21,
+   "sm_clock_mhz": 1982.9,
+   "throttle_reasons": 0,
+   "ecc_sbe_total": 0,
+   "ecc_dbe_total": 0,
+   "xid": 0,
+   "nvlink_gbps": 257.28,
+   "available": true
+  }
+ ],
+ "nodes": [
+  {
+   "node": "node-00",
+   "step_time_s": 0.45864,
+   "net_tx_gbps": 152.215,
+   "net_xmit_wait": 2229.29,
+   "nccl_busbw_gb_s": 42.811
+  },
+  {
+   "node": "node-01",
+   "step_time_s": 0.47051,
+   "net_tx_gbps": 151.089,
+   "net_xmit_wait": 1844.56,
+   "nccl_busbw_gb_s": 43.114
+  }
+ ],
+ "logs": []
+}
