@@ -1,0 +1,80 @@
+{{- if .Values.bringup.enabled }}
+{{- if not .Values.bringup.node }}{{ fail "bringup.node is required" }}{{ end }}
+{{- if not .Values.bringup.minBusbw }}{{ fail "bringup.minBusbw (GB/s) is required" }}{{ end }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Release.Name }}-bringup
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Release.Name }}-bringup
+rules:
+  - apiGroups: [""]
+    resources: [nodes]
+    verbs: [get, list, patch, update]
+  - apiGroups: [""]
+    resources: [pods]
+    verbs: [get, list, delete]
+  - apiGroups: [""]
+    resources: [pods/eviction]
+    verbs: [create]
+  - apiGroups: [apps]
+    resources: [daemonsets]
+    verbs: [get, list]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Release.Name }}-bringup
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Release.Name }}-bringup
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Release.Name }}-bringup
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-bringup-{{ .Values.bringup.node | replace "." "-" | trunc 40 }}
+  labels: {{- include "gpuwatch.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      serviceAccountName: {{ .Release.Name }}-bringup
+      restartPolicy: Never
+      nodeName: {{ .Values.bringup.node }}
+      tolerations:
+        - operator: Exists   # must run on a cordoned / tainted node too
+      containers:
+        - name: bringup
+          image: {{ .Values.image.bringup }}
+          args:
+            - --backend=live
+            - --node={{ .Values.bringup.node }}
+            - --scheduler=k8s
+            - --min-busbw={{ .Values.bringup.minBusbw }}
+            - --burn-in={{ .Values.bringup.burnIn }}
+            - --report-dir=/reports
+            {{- if .Values.bringup.execute }}
+            - --execute
+            {{- end }}
+            {{- range .Values.bringup.extraArgs }}
+            - {{ . }}
+            {{- end }}
+          resources:
+            limits:
+              nvidia.com/gpu: 8
+          securityContext:
+            capabilities: {add: ["SYS_ADMIN"]}
+          volumeMounts:
+            - {name: reports, mountPath: /reports}
+      volumes:
+        - name: reports
+          hostPath: {path: /var/lib/gpuwatch/reports, type: DirectoryOrCreate}
+{{- end }}

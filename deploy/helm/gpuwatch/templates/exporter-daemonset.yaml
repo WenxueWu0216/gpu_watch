@@ -1,0 +1,78 @@
+{{- if .Values.exporter.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}-exporter
+  labels: {{- include "gpuwatch.labels" . | nindent 4 }}
+    app.kubernetes.io/name: gpuwatch-exporter
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gpuwatch-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gpuwatch-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.exporter.port }}"
+    spec:
+      nodeSelector: {{- toYaml .Values.gpuNodeSelector | nindent 8 }}
+      {{- if .Values.runtimeClassName }}
+      runtimeClassName: {{ .Values.runtimeClassName }}
+      {{- end }}
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: exporter
+          image: {{ .Values.image.exporter }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - --mode=live
+            - --listen=:{{ .Values.exporter.port }}
+            - --dcgm-url={{ .Values.exporter.dcgmUrl }}
+            - --textfile-dir=/textfile
+            - --ib-root=/host/sys/class/infiniband
+            - --hostname=$(NODE_NAME)
+            - --force-hostname   # dcgm-exporter in a pod labels series with the pod name
+          env:
+            - name: NODE_NAME
+              valueFrom: {fieldRef: {fieldPath: spec.nodeName}}
+          ports:
+            - {name: metrics, containerPort: {{ .Values.exporter.port }}}
+          readinessProbe:
+            httpGet: {path: /healthz, port: metrics}
+          resources:
+            requests: {cpu: 50m, memory: 32Mi}
+            limits: {memory: 128Mi}
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - {name: textfile, mountPath: /textfile, readOnly: true}
+            - {name: infiniband, mountPath: /host/sys/class/infiniband, readOnly: true}
+        {{- if .Values.exporter.dcgmSidecar.enabled }}
+        - name: dcgm-exporter
+          image: {{ .Values.exporter.dcgmSidecar.image }}
+          args: ["-a", "127.0.0.1:9401", "-f", "/etc/gpuwatch/gpuwatch-counters.csv"]
+          env:
+            - {name: NVIDIA_VISIBLE_DEVICES, value: all}
+            - name: DCGM_EXPORTER_KUBERNETES
+              value: "true"
+          securityContext:
+            capabilities: {add: ["SYS_ADMIN"]}
+          volumeMounts:
+            - {name: dcgm-counters, mountPath: /etc/gpuwatch, readOnly: true}
+        {{- end }}
+      volumes:
+        - name: textfile
+          hostPath: {path: {{ .Values.textfileHostPath }}, type: DirectoryOrCreate}
+        - name: infiniband
+          hostPath: {path: {{ .Values.exporter.infinibandSysfs }}, type: ""}
+        {{- if .Values.exporter.dcgmSidecar.enabled }}
+        - name: dcgm-counters
+          configMap: {name: {{ .Release.Name }}-dcgm-counters}
+        {{- end }}
+{{- end }}

@@ -1,0 +1,37 @@
+{{- if .Values.detector.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-detector
+  labels: {{- include "gpuwatch.labels" . | nindent 4 }}
+    app.kubernetes.io/name: gpuwatch-detector
+spec:
+  replicas: 1   # stateful (sliding windows); do not scale horizontally
+  strategy: {type: Recreate}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gpuwatch-detector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gpuwatch-detector
+    spec:
+      containers:
+        - name: detector
+          image: {{ .Values.image.python }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - detector
+            - --source=prometheus
+            - --prom-url={{ .Values.detector.prometheusUrl }}
+            - --interval={{ .Values.detector.interval }}
+            {{- if .Values.detector.otlpEndpoint }}
+            - --otlp-endpoint={{ .Values.detector.otlpEndpoint }}
+            {{- end }}
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {memory: 512Mi}
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+{{- end }}

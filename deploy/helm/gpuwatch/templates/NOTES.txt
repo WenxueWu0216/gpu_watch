@@ -1,0 +1,9 @@
+GPUWatch {{ .Chart.AppVersion }} installed (NOT VERIFIED IN CI on a real cluster).
+- Exporter DaemonSet on nodes matching {{ toYaml .Values.gpuNodeSelector }} (port {{ .Values.exporter.port }}).
+- Detector reads {{ .Values.detector.prometheusUrl }}.
+{{- if .Values.ddpBench.enabled }}
+- DDP benchmark: kubectl logs -f job/{{ .Release.Name }}-ddp-bench
+{{- end }}
+{{- if .Values.bringup.enabled }}
+- Bring-up gate for {{ .Values.bringup.node }} ({{ if .Values.bringup.execute }}EXECUTE{{ else }}dry-run{{ end }}): kubectl logs job/{{ .Release.Name }}-bringup-{{ .Values.bringup.node }}
+{{- end }}
