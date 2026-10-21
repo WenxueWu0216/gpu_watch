@@ -1,0 +1,359 @@
+{
+  "buckets": {
+    "ecc": [
+      {
+        "bucket": "SBE <2/scrape",
+        "detected": 3,
+        "runs": 4,
+        "ttd_median_s": 28.7
+      },
+      {
+        "bucket": "SBE 2..10/scrape",
+        "detected": 14,
+        "runs": 14,
+        "ttd_median_s": 14.8
+      },
+      {
+        "bucket": "SBE >=10/scrape",
+        "detected": 82,
+        "runs": 82,
+        "ttd_median_s": 5.2
+      },
+      {
+        "bucket": "variant=dbe",
+        "detected": 47,
+        "runs": 47,
+        "ttd_median_s": 5.7
+      },
+      {
+        "bucket": "variant=sbe",
+        "detected": 52,
+        "runs": 53,
+        "ttd_median_s": 5.6
+      }
+    ],
+    "network": [
+      {
+        "bucket": "bw x0.90-0.98",
+        "detected": 10,
+        "runs": 11,
+        "ttd_median_s": 84.0
+      },
+      {
+        "bucket": "bw x0.70-0.90",
+        "detected": 23,
+        "runs": 23,
+        "ttd_median_s": 44.7
+      },
+      {
+        "bucket": "bw x0.30-0.70",
+        "detected": 66,
+        "runs": 66,
+        "ttd_median_s": 45.0
+      }
+    ],
+    "straggler": [
+      {
+        "bucket": "slowdown 1-5%",
+        "detected": 4,
+        "runs": 12,
+        "ttd_median_s": 106.2
+      },
+      {
+        "bucket": "slowdown 5-10%",
+        "detected": 16,
+        "runs": 16,
+        "ttd_median_s": 113.8
+      },
+      {
+        "bucket": "slowdown 10-20%",
+        "detected": 20,
+        "runs": 20,
+        "ttd_median_s": 73.9
+      },
+      {
+        "bucket": "slowdown 20-40%",
+        "detected": 52,
+        "runs": 52,
+        "ttd_median_s": 73.1
+      },
+      {
+        "bucket": "variant=gpu",
+        "detected": 52,
+        "runs": 55,
+        "ttd_median_s": 75.5
+      },
+      {
+        "bucket": "variant=host",
+        "detected": 40,
+        "runs": 45,
+        "ttd_median_s": 73.7
+      }
+    ],
+    "thermal": [
+      {
+        "bucket": "clock -2..8%",
+        "detected": 16,
+        "runs": 16,
+        "ttd_median_s": 141.1
+      },
+      {
+        "bucket": "clock -8..15%",
+        "detected": 17,
+        "runs": 17,
+        "ttd_median_s": 123.0
+      },
+      {
+        "bucket": "clock -15..35%",
+        "detected": 67,
+        "runs": 67,
+        "ttd_median_s": 93.9
+      }
+    ]
+  },
+  "healthy": {
+    "any_event_rate": 0.025,
+    "false_events": 6,
+    "false_events_per_sim_hour": 0.06,
+    "runs": 200,
+    "runs_with_any_event": 5
+  },
+  "healthy_fp_examples": [
+    {
+      "detected": false,
+      "event_kinds": [
+        "straggler"
+      ],
+      "fault": "",
+      "kind": "healthy",
+      "magnitude": 0.0,
+      "off_target": 1,
+      "seed": 10007,
+      "ttd_s": null,
+      "variant": ""
+    },
+    {
+      "detected": false,
+      "event_kinds": [
+        "straggler"
+      ],
+      "fault": "",
+      "kind": "healthy",
+      "magnitude": 0.0,
+      "off_target": 1,
+      "seed": 10039,
+      "ttd_s": null,
+      "variant": ""
+    },
+    {
+      "detected": false,
+      "event_kinds": [
+        "straggler"
+      ],
+      "fault": "",
+      "kind": "healthy",
+      "magnitude": 0.0,
+      "off_target": 1,
+      "seed": 10154,
+      "ttd_s": null,
+      "variant": ""
+    },
+    {
+      "detected": false,
+      "event_kinds": [
+        "straggler"
+      ],
+      "fault": "",
+      "kind": "healthy",
+      "magnitude": 0.0,
+      "off_target": 1,
+      "seed": 10173,
+      "ttd_s": null,
+      "variant": ""
+    },
+    {
+      "detected": false,
+      "event_kinds": [
+        "straggler"
+      ],
+      "fault": "",
+      "kind": "healthy",
+      "magnitude": 0.0,
+      "off_target": 2,
+      "seed": 10190,
+      "ttd_s": null,
+      "variant": ""
+    }
+  ],
+  "missed": [
+    {
+      "detected": false,
+      "event_kinds": [],
+      "fault": "ecc@node-01/gpu4 t=554s mag=0.314 variant=sbe",
+      "kind": "ecc",
+      "magnitude": 0.31390477202262596,
+      "off_target": 0,
+      "seed": 10,
+      "ttd_s": null,
+      "variant": "sbe"
+    },
+    {
+      "detected": false,
+      "event_kinds": [],
+      "fault": "straggler@node-03 t=617s mag=1.02 variant=gpu",
+      "kind": "straggler",
+      "magnitude": 1.01651065841406,
+      "off_target": 0,
+      "seed": 16,
+      "ttd_s": null,
+      "variant": "gpu"
+    },
+    {
+      "detected": false,
+      "event_kinds": [],
+      "fault": "straggler@node-04 t=672s mag=1.02 variant=host",
+      "kind": "straggler",
+      "magnitude": 1.0197004702394585,
+      "off_target": 0,
+      "seed": 45,
+      "ttd_s": null,
+      "variant": "host"
+    },
+    {
+      "detected": false,
+      "event_kinds": [],
+      "fault": "straggler@node-05 t=683s mag=1.01 variant=host",
+      "kind": "straggler",
+      "magnitude": 1.0110187646314612,
+      "off_target": 0,
+      "seed": 53,
+      "ttd_s": null,
+      "variant": "host"
+    },
+    {
+      "detected": false,
+      "event_kinds": [
+        "straggler"
+      ],
+      "fault": "straggler@node-01 t=716s mag=1.03 variant=host",
+      "kind": "straggler",
+      "magnitude": 1.0325794072269,
+      "off_target": 1,
+      "seed": 64,
+      "ttd_s": null,
+      "variant": "host"
+    },
+    {
+      "detected": false,
+      "event_kinds": [],
+      "fault": "straggler@node-05 t=720s mag=1.02 variant=gpu",
+      "kind": "straggler",
+      "magnitude": 1.0206703778862147,
+      "off_target": 0,
+      "seed": 67,
+      "ttd_s": null,
+      "variant": "gpu"
+    },
+    {
+      "detected": false,
+      "event_kinds": [],
+      "fault": "straggler@node-06 t=516s mag=1.02 variant=gpu",
+      "kind": "straggler",
+      "magnitude": 1.0157066551587706,
+      "off_target": 0,
+      "seed": 74,
+      "ttd_s": null,
+      "variant": "gpu"
+    },
+    {
+      "detected": false,
+      "event_kinds": [],
+      "fault": "straggler@node-01 t=475s mag=1.02 variant=host",
+      "kind": "straggler",
+      "magnitude": 1.016100031180127,
+      "off_target": 0,
+      "seed": 82,
+      "ttd_s": null,
+      "variant": "host"
+    },
+    {
+      "detected": false,
+      "event_kinds": [],
+      "fault": "straggler@node-04 t=686s mag=1.03 variant=host",
+      "kind": "straggler",
+      "magnitude": 1.028114930063293,
+      "off_target": 0,
+      "seed": 83,
+      "ttd_s": null,
+      "variant": "host"
+    },
+    {
+      "detected": false,
+      "event_kinds": [],
+      "fault": "network@node-07 t=369s mag=0.978",
+      "kind": "network",
+      "magnitude": 0.978338329581917,
+      "off_target": 0,
+      "seed": 81,
+      "ttd_s": null,
+      "variant": ""
+    }
+  ],
+  "per_fault": {
+    "ecc": {
+      "detected": 99,
+      "detection_rate": 0.99,
+      "healthy_fp_rate": 0.0,
+      "healthy_fp_runs": 0,
+      "off_target_events": 3,
+      "runs": 100,
+      "ttd_max_s": 70.6,
+      "ttd_median_s": 5.7,
+      "ttd_p90_s": 16.2
+    },
+    "network": {
+      "detected": 99,
+      "detection_rate": 0.99,
+      "healthy_fp_rate": 0.0,
+      "healthy_fp_runs": 0,
+      "off_target_events": 3,
+      "runs": 100,
+      "ttd_max_s": 377.4,
+      "ttd_median_s": 45.1,
+      "ttd_p90_s": 49.7
+    },
+    "straggler": {
+      "detected": 92,
+      "detection_rate": 0.92,
+      "healthy_fp_rate": 0.025,
+      "healthy_fp_runs": 5,
+      "off_target_events": 3,
+      "runs": 100,
+      "ttd_max_s": 1152.5,
+      "ttd_median_s": 75.2,
+      "ttd_p90_s": 112.5
+    },
+    "thermal": {
+      "detected": 100,
+      "detection_rate": 1.0,
+      "healthy_fp_rate": 0.0,
+      "healthy_fp_runs": 0,
+      "off_target_events": 4,
+      "runs": 100,
+      "ttd_max_s": 172.2,
+      "ttd_median_s": 103.9,
+      "ttd_p90_s": 136.6
+    },
+    "xid": {
+      "detected": 100,
+      "detection_rate": 1.0,
+      "healthy_fp_rate": 0.0,
+      "healthy_fp_runs": 0,
+      "off_target_events": 1,
+      "runs": 100,
+      "ttd_max_s": 9.8,
+      "ttd_median_s": 5.3,
+      "ttd_p90_s": 8.8
+    }
+  }
+}
