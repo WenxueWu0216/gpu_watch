@@ -15,7 +15,7 @@ GPU cluster telemetry, fault detection, and node health gating for distributed t
 |---|---|---|---|---|---|
 | Cluster simulator | [`gpu_sim/`](gpu_sim) | Python | N nodes x G GPUs, DCGM-style metrics, kernel/NCCL log lines, seeded fault injectors (thermal, XID 79, ECC burst, straggler, network) | - | tested in CI |
 | Prometheus exporter | [`exporter/`](exporter) | Go | serves simulator snapshots under DCGM metric names | proxies dcgm-exporter, merges workload textfiles, derives NIC throughput / xmit-wait from IB sysfs | sim + parsers tested in CI; live **NOT VERIFIED IN CI** |
-| Detector | [`detector/`](detector) | Python | consumes simulator snapshots | queries Prometheus (follow or backfill) | tested in CI; also ran end-to-end via Prometheus in the compose stack |
+| Detector | [`detector/`](detector) | Python | consumes simulator snapshots | queries Prometheus (follow or backfill) | tested in CI; also run manually (not in CI) end-to-end through Prometheus in the compose stack, on simulated data |
 | Bring-up gate | [`bringup/`](bringup) | Python | simulated node renders nvidia-smi / dcgmi / gpu_burn / nccl-tests output; fake scontrol / kubectl | runs the real tools; drains via scontrol / kubectl (dry-run by default) | tested against fakes; live **NOT VERIFIED IN CI** |
 | Tracing | [`tracing/`](tracing), [`docker-compose.yml`](docker-compose.yml) | Python / YAML | OTLP -> otel-collector -> Tempo + Prometheus, Grafana | same | in-memory + OTLP/HTTP export tested in CI |
 | AI diagnosis | [`ai_diagnosis/`](ai_diagnosis) | Python | replay backend (hand-authored fixtures) | Anthropic API (`claude-opus-5-5`, structured JSON output) | grounding validator tested in CI; API path tested with a mocked client only |

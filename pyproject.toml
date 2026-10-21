@@ -36,6 +36,7 @@ packages = [
 
 [tool.setuptools.package-data]
 ai_diagnosis = ["fixtures/*.json"]
+detector = ["config.yaml"]
 eval = ["*.yaml"]
 
 [tool.pytest.ini_options]
