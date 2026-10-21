@@ -1,0 +1,48 @@
+{
+  "incident_id": "straggler:node-01:None:370",
+  "title": "Model correctly declines: host-bound straggler without host metrics",
+  "provenance": "hand-authored for tests/demo; NOT recorded from the Anthropic API. Re-record with: python -m ai_diagnosis ... --backend anthropic --record",
+  "scenario": {
+    "faults": [
+      "straggler:node-01@300,mag=1.2"
+    ],
+    "seed": 7,
+    "kind": null
+  },
+  "prompt_sha": "7d7eb5539953326b",
+  "evidence_sha": "ba3ba060162c1fcb",
+  "response": {
+    "status": "insufficient_evidence",
+    "hypothesis": "insufficient evidence",
+    "hypothesis_citations": [],
+    "confidence": "low",
+    "claims": [
+      {
+        "text": "node-01 step time is above the cluster median.",
+        "citations": [
+          "A1",
+          "M1",
+          "M2"
+        ]
+      },
+      {
+        "text": "GPU utilization and NIC transmit-wait on node-01 are in line with the cluster, so neither a slow GPU nor a slow link is indicated.",
+        "citations": [
+          "A2",
+          "M3",
+          "M4"
+        ]
+      }
+    ],
+    "next_action": "Collect host-side evidence before acting.",
+    "next_action_citations": [
+      "A3"
+    ],
+    "missing_evidence": [
+      "host CPU utilization and steal time on node-01",
+      "data-loader wait time per step",
+      "page cache / storage read latency on node-01",
+      "kernel or dmesg messages from node-01 in the window"
+    ]
+  }
+}

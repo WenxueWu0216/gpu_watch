@@ -1,0 +1,58 @@
+{
+  "incident_id": "ecc_error:node-02:4:300",
+  "title": "Diagnosed, with one invented-number claim rejected by the validator",
+  "provenance": "hand-authored for tests/demo; NOT recorded from the Anthropic API. Re-record with: python -m ai_diagnosis ... --backend anthropic --record",
+  "scenario": {
+    "faults": [
+      "ecc:node-02:4@300,mag=20,variant=dbe"
+    ],
+    "seed": 7,
+    "kind": "ecc_error"
+  },
+  "prompt_sha": "4893ea2694fbb928",
+  "evidence_sha": "b6f04c305655ee48",
+  "response": {
+    "status": "diagnosed",
+    "hypothesis": "GPU 4 on node-02 is producing a burst of correctable ECC errors, an early sign of degrading HBM.",
+    "hypothesis_citations": [
+      "A1",
+      "M5"
+    ],
+    "confidence": "medium",
+    "claims": [
+      {
+        "text": "The SBE counter on GPU 4 went from 0 to 24 within the window.",
+        "citations": [
+          "M5"
+        ]
+      },
+      {
+        "text": "The alert threshold of 10 correctable errors per window was exceeded.",
+        "citations": [
+          "A1"
+        ]
+      },
+      {
+        "text": "No uncorrectable (DBE) errors or XIDs have been recorded yet.",
+        "citations": [
+          "M6",
+          "M7"
+        ]
+      },
+      {
+        "text": "The error rate is 240 errors per hour, which exceeds NVIDIA's RMA guidance.",
+        "citations": [
+          "M5"
+        ]
+      }
+    ],
+    "next_action": "Watch DCGM_FI_DEV_ECC_DBE_VOL_TOTAL and row-remap status on node-02 GPU 4 (nvidia-smi -q -d ECC,ROW_REMAPPER); schedule a GPU reset to apply pending remaps at the next job boundary.",
+    "next_action_citations": [
+      "M5",
+      "M6"
+    ],
+    "missing_evidence": [
+      "row remapper pending/failure status"
+    ]
+  }
+}
