@@ -1,5 +1,7 @@
 # GPUWatch
 
+[![CI](https://github.com/WenxueWu0216/gpu_watch/actions/workflows/ci.yml/badge.svg)](https://github.com/WenxueWu0216/gpu_watch/actions/workflows/ci.yml)
+
 GPU cluster telemetry, fault detection, and node health gating for distributed training.
 
 > **Status: everything in CI runs against a deterministic simulator. Nothing in this
